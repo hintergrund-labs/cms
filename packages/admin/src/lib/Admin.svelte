@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
     import MainMenu from './MainMenu.svelte';
 	import StepNav from './StepNav.svelte';
+    import Assets from './Assets.svelte';
     import { collections, changes } from '$lib/stores/collections';
     import RecordList from './RecordList.svelte';
     import Record from './Record.svelte';
@@ -9,13 +10,27 @@
     import { generateId } from '$lib/utils';
 
 	// TODO: fetch from API
-	// import config from '$lib/content/config.json';
-	// import globals from '$lib/content/globals.json';
-	// import todos from '$lib/content/todos.json';
-    let config, globals, todos;
+	import configFile from '$lib/content/config.json';
+	import globalsFile from '$lib/content/globals.json';
+	import todosFile from '$lib/content/todos.json';
+    let content = { config: configFile, globals: globalsFile, todos: todosFile };
+    
+    $: collections.set(content);
+    $: config = $collections.config;
+    $: globals = $collections.globals;
+    $: todos = $collections.todos;
 	
 	onMount(async () => {
-		// Content
+        // Fetch content
+        try {
+            await fetch('/admin/collections')
+                .then(response => response.json())
+                .then(json => content = json);
+        } catch (error) {
+            console.error('Failed to fetch:', error);
+        }
+
+		// Content changes store
 		changes.subscribe((/** @type {{ [s: string]: any; }} */ changes) => {
             if (Object.keys(changes).length > 0) {
                 localStorage.setItem('changes', JSON.stringify(changes));
@@ -29,15 +44,11 @@
                 );
             }
         });
-        fetch('/admin/content')
-            .then(res => res.json())
-            .then(data => {
-                ({config, globals, todos } = data);
-            });
-        
-        collections.set({globals, todos});
 	});
 
+    // $: console.log($collections);
+    // $: console.log($changes);
+    // $: console.log(config);
     
     // $: commitFiles = Object.keys($changes).map((id) => {
     //     return {[id]: $collections[id]};
@@ -73,7 +84,7 @@
     <main>
         <StepNav />
 		<!-- /* Router -->
-		{#if $location === 'content' && $collectionId}
+		{#if $location === 'content' && $collectionId && config && todos && globals}
             {#if config[$collectionId].hasOwnProperty('isCollection') && config[$collectionId].isCollection}
                 {#if $recordId}
                     <Record record={$collections[$collectionId][$recordId]} config={config[$collectionId]}/>
@@ -83,11 +94,11 @@
             {:else}
                 <Record record={$collections[$collectionId]} config={config[$collectionId]}/>
             {/if}
-        {:else if $location === 'media'}
-            media
+        {:else if $location === 'assets'}
+            <Assets />
         {:else if $location === 'settings'}
             settings
-        {:else if $location === '' || $location === 'content'}
+        {:else if ($location === '' || $location === 'content') && config}
             <h2>Content</h2>
             <div class="cards content">
                 {#each Object.entries(config) as [id, content]}
@@ -109,10 +120,10 @@
                 {/each}
             </div>
 
-            <h2>Media</h2>
+            <h2>Assets</h2>
             <div class="cards">
-                <a class="card" href="#/media">
-                    <h4>Media</h4>
+                <a class="card" href="#/assets">
+                    <h4>Assets</h4>
                 </a>
             </div>
             {:else}

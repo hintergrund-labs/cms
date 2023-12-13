@@ -14,7 +14,7 @@
 <svelte:window bind:innerWidth></svelte:window>
 
 {#if mobile && !mobileOpen}
-<button class="burger" class:open={mobileOpen} on:click={() => mobileOpen = true} in:fade={{duration: 500}}>
+<button class="burger" class:open={mobileOpen} on:click={() => mobileOpen = true} in:fade={{duration: 300}}>
     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-menu-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
         <line x1="4" y1="6" x2="20" y2="6"></line>
@@ -64,7 +64,7 @@
                 </a>
             {/each}
         {/if}
-        <a class="menu-item {$location === 'media' ? 'active' : ''}" href="#/media" on:click={() => contentOpen = !contentOpen}>
+        <a class="menu-item {$location === 'assets' ? 'active' : ''}" href="#/assets" on:click={() => contentOpen = false}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                 <path d="M15 8h.01"></path>
@@ -74,7 +74,7 @@
                 <path d="M16 19h6"></path>
                 <path d="M19 16v6"></path>
             </svg>
-            <span>Media</span>
+            <span>Assets</span>
         </a>
     </div>
     <div>

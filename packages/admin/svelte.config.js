@@ -7,10 +7,10 @@ const config = {
 		prerender: {
 			handleMissingId: 'ignore'
 		}
-	},
-	compilerOptions: {
-		customElement: true
 	}
+	// compilerOptions: {
+	// 	customElement: true
+	// }
 };
 
 export default config;

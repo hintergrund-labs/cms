@@ -18,8 +18,8 @@
                 <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
                 <path d="M0 0h24v24H0z" fill="none"/>
         </a>
-        {#if $location === 'media'}
-            <span>Media</span>
+        {#if $location === 'assets'}
+            <span>Assets</span>
         {:else if $location === 'settings'}
             <span>Settings</span>
         {:else if $collectionId && !$recordId}

@@ -3,7 +3,9 @@ import { Octokit } from '@octokit/rest';
 const config = {
 	gitOwner: 'hintergrund-labs',
 	gitRepo: 'cms',
-	contentDir: 'examples/cloudflare/src/content'
+	branch: 'main',
+	contentDir: 'examples/cloudflare/src/content',
+	mediaDir: 'examples/cloudflare/static'
 };
 
 /**
@@ -15,19 +17,25 @@ export async function onRequestGet(context) {
 	try {
 		const { request, env } = context;
 
-		const token = await env.GIT_TOKEN;
+		const token = await env.GH_TOKEN;
 
 		const octokit = new Octokit({
 			auth: token
 		});
 
-		const path = config.contentDir;
+		// Check permissions
+		const permissions = await octokit.rest.repos.get({
+			owner: config.gitOwner,
+			repo: config.gitRepo
+		});
+		// TODO return error if permissions are not correct
+		// permissions.data.permissions.push
 
 		/** @type {import('@octokit/types').OctokitResponse<any>} */
 		const contentFiles = await octokit.rest.repos.getContent({
 			owner: config.gitOwner,
 			repo: config.gitRepo,
-			path
+			path: config.contentDir
 		});
 
 		if (contentFiles.status !== 200 || !contentFiles.data || !contentFiles.data.length) {
@@ -65,69 +73,94 @@ export async function onRequestGet(context) {
  */
 export async function onRequestPut(context) {
 	try {
-		const { request, env } = context;
+		const { env } = context;
 
-		const commitFiles = await request.json();
+		// const commitFiles = await request.json();
+		const changes = {
+			todos: {
+				ajh3344r1j: {
+					title: 'Buy food',
+					slug: 'buy-food',
+					description: '<h4>Lets buy food</h4><p>Bread<br>Milk<br>Eggs</p> gaga',
+					done: false
+				}
+			},
+			globals: {
+				title: 'My site hey',
+				description: 'My site description',
+				keywords: 'my, site, keywords',
+				logo: 'favicon.png',
+				favicon: 'favicon.png'
+			}
+		};
 
-		console.log(commitFiles);
+		const token = await env.GH_TOKEN;
+
+		const octokit = new Octokit({
+			auth: token
+		});
+
+		// Get reference from branch
+		const ref = await octokit.rest.git.getRef({
+			owner: config.gitOwner,
+			repo: config.gitRepo,
+			ref: `heads/${config.branch}`
+		});
+
+		// Get latest commit
+		const commit = await octokit.rest.git.getCommit({
+			owner: config.gitOwner,
+			repo: config.gitRepo,
+			commit_sha: ref.data.object.sha
+		});
+
+		// Create blob for each change and save file tree
+		const blobs = await Promise.all(
+			Object.keys(changes).map(async (collection) => {
+				const blob = await octokit.rest.git.createBlob({
+					owner: config.gitOwner,
+					repo: config.gitRepo,
+					content: JSON.stringify(changes[collection], null, 4),
+					encoding: 'utf-8'
+				});
+
+				return {
+					path: `${config.contentDir}/${collection}.json`,
+					mode: '100644',
+					type: 'blob',
+					sha: blob.data.sha
+				};
+			})
+		);
+
+		// Create tree
+		const newTree = await octokit.rest.git.createTree({
+			owner: config.gitOwner,
+			repo: config.gitRepo,
+			tree: blobs,
+			base_tree: commit.data.tree.sha
+		});
+
+		// Create commit
+		const newCommit = await octokit.rest.git.createCommit({
+			owner: config.gitOwner,
+			repo: config.gitRepo,
+			message: 'Update content',
+			tree: newTree.data.sha,
+			parents: [commit.data.sha]
+		});
+
+		// Update reference
+		await octokit.rest.git.updateRef({
+			owner: config.gitOwner,
+			repo: config.gitRepo,
+			ref: `heads/${config.branch}`,
+			sha: newCommit.data.sha
+		});
 
 		return new Response(JSON.stringify({ success: true }), { status: 200 });
-
-		if (tree) {
-			// Get user id from cookie
-			const cookie = parse(request.headers.get('cookie') || '');
-			const userId = await env.HG_KV.get(`session:${cookie.session_id}`);
-
-			const token = await decrypt(await env.HG_KV.get('git_token'), env.SECRET);
-
-			const octokit = new Octokit({
-				auth: token
-			});
-
-			const repo = {
-				owner: config.gitOwner,
-				repo: config.gitRepo
-			};
-			const branch = config.contentBranch || 'preview';
-
-			let treeSha;
-			try {
-				treeSha = (await octokit.git.getRef({ ...repo, ref: `heads/${branch}` })).data.object.sha;
-				console.log(`Branch ${branch} already exists.`);
-			} catch (error) {
-				if (error.status === 404) {
-					treeSha = await octokit.git.createRef({
-						...repo,
-						ref: `refs/heads/${branch}`,
-						sha: (await octokit.git.getRef({ ...repo, ref: `heads/${config.mainBranch}` })).data
-							.object.sha
-					});
-					console.log(`Branch ${branch} created.`);
-				} else {
-					throw error;
-				}
-			}
-
-			console.log(treeSha);
-
-			if (response.status === 201 || response.status === 200) {
-				return new Response(JSON.stringify({ success: true, data: response.data }), {
-					status: 200
-				});
-			} else {
-				return new Response(JSON.stringify({ success: false, message: response }), {
-					status: 500
-				});
-			}
-		}
-
-		return new Response(
-			JSON.stringify({ success: false, message: 'No file tree was provided in the request body' }),
-			{
-				status: 500
-			}
-		);
 	} catch (error) {
+		console.log(error);
 		return new Response(JSON.stringify(error), {
 			status: 500
 		});
@@ -140,7 +173,6 @@ export async function onRequestDelete(context) {
 		const { env, request } = context;
 		const { message, repository, path } = await request.json();
 
-		console.log(message, repository, path);
 		const token = await env.SvelteCms.get('token');
 
 		const headers = {
@@ -153,7 +185,6 @@ export async function onRequestDelete(context) {
 			{ headers }
 		).then((res) => res.json());
 
-		console.log(fileInfo);
 		if (!fileInfo.sha) {
 			return new Response('Resource was already deleted', { status: 204 });
 		}
@@ -162,7 +193,6 @@ export async function onRequestDelete(context) {
 			sha: fileInfo.sha,
 			branch: 'main'
 		});
-		console.log(body);
 		const response = await fetch(`https://api.github.com/repos/${repository}/contents/${path}`, {
 			method: 'DELETE',
 			headers,
