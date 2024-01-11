@@ -23,7 +23,7 @@
 	onMount(async () => {
         // Fetch content
         try {
-            await fetch('/admin/collections')
+            await fetch('/hg-admin/collections')
                 .then(response => response.json())
                 .then(json => content = json);
         } catch (error) {
@@ -134,6 +134,9 @@
 </div>
 
 <style>
+:global(:root){
+    font-family: sans-serif;
+}
 .container {
     display: flex;
     min-height: 100vh;

@@ -17,7 +17,7 @@
 
     onMount(async () => {
         try {
-            await fetch('/admin/assets')
+            await fetch('/hg-admin/assets')
                 .then(response => response.json())
                 .then(json => assets = json);
         } catch (error) {
@@ -53,7 +53,7 @@
                 .replace(/[\s_-]+/g, '-')
                 .replace(/^-+|-+$/g, '');
             
-            response = await fetch("/admin/assets", {
+            response = await fetch("/hg-admin/assets", {
                 method: "PUT",
                 body: JSON.stringify({
                     file: name,
@@ -71,7 +71,7 @@
             return;
         }
         let file = selected;
-        response = await fetch("/admin/assets", {
+        response = await fetch("/hg-admin/assets", {
             method: "DELETE",
             body: JSON.stringify({
                 file: selected

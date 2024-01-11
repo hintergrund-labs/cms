@@ -85,7 +85,7 @@
                 <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"></path>
             </svg>
         </a>       
-        <a class="menu-item" on:click|preventDefault={() => {logoutForm.submit()}} href="/api/auth/logout" rel="external">
+        <a class="menu-item" on:click|preventDefault={() => {logoutForm.submit()}} href="/logout" rel="external">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                 <line x1="4" y1="12" x2="14" y2="12" />
@@ -94,7 +94,7 @@
                 <line x1="20" y1="4" x2="20" y2="20" />
                 </svg>
         </a>
-        <form bind:this={logoutForm} method="POST" action="/api/auth/logout"></form>
+        <form bind:this={logoutForm} method="POST" action="/logout"></form>
     </div>
 </aside>
 
