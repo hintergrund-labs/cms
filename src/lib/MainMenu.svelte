@@ -108,7 +108,6 @@ aside {
     position: relative;
     transition: width ease-out 0.1s;
     height: 100vh;
-    padding-bottom: 2rem;
 }
 aside.mobile {
     overflow: hidden;
