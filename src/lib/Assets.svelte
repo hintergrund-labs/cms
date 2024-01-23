@@ -14,8 +14,15 @@
         status: null,
         message: null
     };
+    $: console.log(assets);
+    $: console.log(selected);
+    $: console.log(file);
 
     onMount(async () => {
+        getAssets();
+    })
+
+    async function getAssets() {
         try {
             await fetch('/hg-admin/assets')
                 .then(response => response.json())
@@ -23,7 +30,7 @@
         } catch (error) {
             console.error('Failed to fetch:', error);
         }
-    })
+    }
 
     async function fileChange(){
         if (files.length !== 1){
@@ -61,6 +68,11 @@
                 })
             });
             console.log("commit", name);
+            if (response.status === 200) {
+                setTimeout(() => {
+                    getAssets();
+                }, 1000);
+            }
         } else {
             console.log("File already exists");
         }
@@ -70,13 +82,16 @@
         if (!selected) {
             return;
         }
-        let file = selected;
         response = await fetch("/hg-admin/assets", {
             method: "DELETE",
             body: JSON.stringify({
                 file: selected
             })
         });
+        if (response.status === 200) {
+            assets = assets.filter(asset => asset.name !== selected);
+            selected = null;
+        }
     }
 
     function readFile(file){

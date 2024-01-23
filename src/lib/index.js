@@ -1,3 +1,5 @@
-import Admin from './Admin.svelte';
-import AdminElement from './AdminElement.svelte';
-export { Admin, AdminElement };
+// import HgAdmin from './HgAdmin.svelte';
+import HgAdminElement from './HgAdminElement.svelte';
+// import HgLogin from './HgLogin.svelte';
+import HgLoginElement from './HgLoginElement.svelte';
+export { HgAdminElement, HgLoginElement };

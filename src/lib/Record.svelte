@@ -1,6 +1,6 @@
 <script>
-    import { changes } from '$lib/stores/collections';
-    import { collectionId, recordId } from '$lib/stores/location';
+    import { changes } from './stores/collections';
+    import { collectionId, recordId } from './stores/location';
 
     /** @type {any} */
     export let record;

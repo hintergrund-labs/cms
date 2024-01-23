@@ -15,7 +15,7 @@ const config = {
  */
 export async function onRequestGet(context) {
 	try {
-		const { request, env } = context;
+		const { env } = context;
 
 		const token = await env.GH_TOKEN;
 

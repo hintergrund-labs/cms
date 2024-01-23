@@ -3,26 +3,27 @@
     import MainMenu from './MainMenu.svelte';
 	import StepNav from './StepNav.svelte';
     import Assets from './Assets.svelte';
-    import { collections, changes } from '$lib/stores/collections';
+    import { collections, changes } from './stores/collections.js';
     import RecordList from './RecordList.svelte';
     import Record from './Record.svelte';
-    import { location, collectionId, recordId } from '$lib/stores/location';
-    import { generateId } from '$lib/utils';
+    import { location, collectionId, recordId } from './stores/location.js';
+    import { generateId } from './utils.js';
 
 	// TODO: fetch from API
-	import configFile from '$lib/content/config.json';
-	import globalsFile from '$lib/content/globals.json';
-	import todosFile from '$lib/content/todos.json';
-    let content = { config: configFile, globals: globalsFile, todos: todosFile };
+	import configFile from './content/config.json';
+	import globalsFile from './content/globals.json';
+	import todosFile from './content/todos.json';
+    let content = { };
     
     $: collections.set(content);
     $: config = $collections.config;
-    $: globals = $collections.globals;
-    $: todos = $collections.todos;
-	
+
 	onMount(async () => {
         // Fetch content
         try {
+            setTimeout(() => {
+                content = { config: configFile, globals: globalsFile, todos: todosFile}
+            }, 1000);
             await fetch('/hg-admin/collections')
                 .then(response => response.json())
                 .then(json => content = json);
@@ -45,10 +46,6 @@
             }
         });
 	});
-
-    // $: console.log($collections);
-    // $: console.log($changes);
-    // $: console.log(config);
     
     // $: commitFiles = Object.keys($changes).map((id) => {
     //     return {[id]: $collections[id]};
@@ -84,7 +81,7 @@
     <main>
         <StepNav />
 		<!-- /* Router -->
-		{#if $location === 'content' && $collectionId && config && todos && globals}
+		{#if $location === 'content' && $collectionId && config}
             {#if config[$collectionId].hasOwnProperty('isCollection') && config[$collectionId].isCollection}
                 {#if $recordId}
                     <Record record={$collections[$collectionId][$recordId]} config={config[$collectionId]}/>
@@ -134,12 +131,12 @@
 </div>
 
 <style>
-:global(:root){
-    font-family: sans-serif;
-}
 .container {
     display: flex;
     min-height: 100vh;
+    font-family: sans-serif;
+    background-color: #fff;
+    color: #333;
 }
 main {
     padding: 8rem 2rem 2rem;
@@ -214,12 +211,6 @@ h2 {
 	border-radius: 5px;
 	display: flex;
 	align-items: center;
-}
-
-
-:global(body) {
-	margin: 0;
-	font-family: sans-serif;
 }
 
 :global(h1) {

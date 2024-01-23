@@ -1,26 +1,34 @@
 import { parse } from 'cookie';
-import jwt from '@tsndr/cloudflare-worker-jwt';
+import { verify } from './jwt';
+import { getTemplate } from './template';
 
 /**
  *
- * @param {import('@cloudflare/workers-types').EventContext<any,any,any>} context
- * @returns {Promise<any>}
+ * @param {{request: Request, next: () => Promise<Response, env: {SECRET?: string}}} context
+ * @returns {Promise<Request>}
  */
 export async function onRequest(context) {
 	const { request, next, env } = context;
+
+	const { pathname } = new URL(request.url);
+	if (pathname === '/hg-admin/login' || pathname === '/hg-admin/logout') {
+		return await next();
+	}
 
 	const cookie = parse(request.headers.get('cookie') || '');
 	const token = cookie.token;
 	if (token != null) {
 		const secret = await env.SECRET;
-		const isValid = await jwt.verify(token, secret);
-
+		const isValid = await verify(token, secret);
 		if (isValid) {
 			return await next();
 		}
 	}
 
 	// No cookie or incorrect hash in cookie. Redirect to login.
-	const url = new URL(request.url);
-	return Response.redirect(`${url.origin}/hg-login`, 302);
+	return new Response(getTemplate('hg-login'), {
+		headers: {
+			'content-type': 'text/html'
+		}
+	});
 }

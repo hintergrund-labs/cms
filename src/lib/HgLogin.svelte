@@ -1,13 +1,14 @@
+<svelte:options
+  customElement={{
+    tag: 'hintergrund-login',
+  }}
+/>
 <script>
-	import { onMount } from 'svelte';
-
-	let username = '';
 	let password = '';
-	let newUser = false;
 	let error = '';
 
 	function loginUser() {
-		fetch('/login', {
+		fetch('/hg-admin/login', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
@@ -33,9 +34,6 @@
 		<h2>Log in</h2>
 		<input type="password" name="password" placeholder="Password" required bind:value={password}>
 		<input type="submit" value="Log in">
-		{#if newUser}
-			<p>Account created successfully. Please log in.</p>
-		{/if}
 		{#if error}
 			<p class="error">{error}</p>
 		{/if}
@@ -44,12 +42,25 @@
 
 <style>
 	main {
-		flex-grow: 1;
+		font-family: sans-serif;
+		text-align: center;
+		background-color: #fff;
+		color: #333;
 		display: flex;
 		flex-direction: column;
+		flex-grow: 1;
 		justify-content: center;
 		align-items: center;
+		height: 100vh;
+		margin: 0;
 		width: 100%;
+	}
+	main * {
+		box-sizing: border-box;
+	}
+	h2 {
+		margin: 2rem;
+		font-weight: 200;
 	}
 	form {
 		display: flex;

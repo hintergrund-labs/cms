@@ -1,11 +1,7 @@
 <script>
-    import config from '$lib/content/config.json';
-    import { collections } from '$lib/stores/collections';
-    import { location, collectionId, recordId } from '$lib/stores/location';    
-    
-    /** @type {string | undefined}*/
-    $: title = ($collections && $collectionId && recordId && $collections[$collectionId][$recordId] && 'title' in $collections[$collectionId][$recordId]) ? $collections[$collectionId][$recordId].title : undefined;
-    
+    import config from './content/config.json';
+    import { collections } from './stores/collections';
+    import { location, collectionId, recordId } from './stores/location';    
 </script>
 
 <nav class="step-nav">
@@ -31,7 +27,7 @@
                     <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
                     <path d="M0 0h24v24H0z" fill="none"/>
             </a>
-            <span>{(title != undefined) ? title : $recordId}</span>
+            <span>{$collections[$collectionId][$recordId].title ?? $recordId}</span>
         {/if}
     {/if}
 </nav>

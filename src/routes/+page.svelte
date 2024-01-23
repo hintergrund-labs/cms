@@ -1,5 +1,5 @@
 <script>
-    import Admin from "$lib/Admin.svelte";
+    import HgLogin from '$lib/HgLogin.svelte';
 </script>
 
-Hoi
+<HgLogin />

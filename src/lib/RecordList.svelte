@@ -1,5 +1,5 @@
 <script>
-    import { collectionId } from "$lib/stores/location";
+    import { collectionId } from "./stores/location";
     /** @type {any} */
     export let config;
 
