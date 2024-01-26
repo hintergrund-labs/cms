@@ -1,11 +1,12 @@
 import { Octokit } from '@octokit/rest';
 
+// TODO: Get config from env
 const config = {
 	gitOwner: 'hintergrund-labs',
 	gitRepo: 'cms',
 	branch: 'main',
-	contentDir: 'examples/cloudflare/src/content',
-	mediaDir: 'examples/cloudflare/static'
+	contentDir: 'examples/todos/content',
+	assetDir: 'examples/todos/assets'
 };
 
 /**
@@ -15,7 +16,7 @@ const config = {
  */
 export async function onRequestGet(context) {
 	try {
-		const { request, env } = context;
+		const { env } = context;
 
 		const token = await env.GH_TOKEN;
 
@@ -24,41 +25,49 @@ export async function onRequestGet(context) {
 		});
 
 		// Check permissions
-		const permissions = await octokit.rest.repos.get({
-			owner: config.gitOwner,
-			repo: config.gitRepo
-		});
+		// const permissions = await octokit.rest.repos.get({
+		// 	owner: config.gitOwner,
+		// 	repo: config.gitRepo
+		// });
+		// console.log(permissions)
 		// TODO return error if permissions are not correct
 		// permissions.data.permissions.push
 
-		/** @type {import('@octokit/types').OctokitResponse<any>} */
-		const contentFiles = await octokit.rest.repos.getContent({
+		// Use if you need to get all files in a directory
+		// /** @type {import('@octokit/types').OctokitResponse<any>} */
+		// const contentFiles = await octokit.rest.repos.getContent({
+		// 	owner: config.gitOwner,
+		// 	repo: config.gitRepo,
+		// 	path: config.contentDir
+		// });
+
+		const configFile = await octokit.rest.repos.getContent({
 			owner: config.gitOwner,
 			repo: config.gitRepo,
-			path: config.contentDir
+			path: `${config.contentDir}/config.json`
 		});
 
-		if (contentFiles.status !== 200 || !contentFiles.data || !contentFiles.data.length) {
-			return new Response(JSON.stringify(contentFiles));
-		}
+		const contentConfig = JSON.parse(atob(configFile.data.content));
 
-		const content = await Promise.all(
-			contentFiles.data.map(async (/** @type {{ path: string; name: string; }} */ collection) => {
+		const collections = await Promise.all(
+			Object.keys(contentConfig).map(async (collection) => {
 				const collectionFile = await octokit.rest.repos.getContent({
 					owner: config.gitOwner,
 					repo: config.gitRepo,
-					path: collection.path
+					path: `${config.contentDir}/${collection}.json`
 				});
 
 				return {
-					[collection.name.replace('.json', '')]: JSON.parse(atob(collectionFile.data.content))
+					[collection]: JSON.parse(atob(collectionFile.data.content))
 				};
 			})
 		);
 
-		const contentObject = content.reduce((acc, cur) => ({ ...acc, ...cur }), {});
+		const collectionsObject = collections.reduce((acc, cur) => ({ ...acc, ...cur }), {});
 
-		return new Response(JSON.stringify(contentObject), { status: 200 });
+		return new Response(JSON.stringify({ config: contentConfig, collections: collectionsObject }), {
+			status: 200
+		});
 	} catch (error) {
 		return new Response(JSON.stringify(error), {
 			status: 500
@@ -73,26 +82,26 @@ export async function onRequestGet(context) {
  */
 export async function onRequestPut(context) {
 	try {
-		const { env } = context;
+		const { request, env } = context;
 
-		// const commitFiles = await request.json();
-		const changes = {
-			todos: {
-				ajh3344r1j: {
-					title: 'Buy food',
-					slug: 'buy-food',
-					description: '<h4>Lets buy food</h4><p>Bread<br>Milk<br>Eggs</p> gaga',
-					done: false
-				}
-			},
-			globals: {
-				title: 'My site hey',
-				description: 'My site description',
-				keywords: 'my, site, keywords',
-				logo: 'favicon.png',
-				favicon: 'favicon.png'
-			}
-		};
+		const changes = await request.json();
+		// const changes = {
+		// 	todos: {
+		// 		ajh3344r1j: {
+		// 			title: 'Buy food',
+		// 			slug: 'buy-food',
+		// 			description: '<h4>Lets buy food</h4><p>Bread<br>Milk<br>Eggs</p> gaga',
+		// 			done: false
+		// 		}
+		// 	},
+		// 	globals: {
+		// 		title: 'My site hey',
+		// 		description: 'My site description',
+		// 		keywords: 'my, site, keywords',
+		// 		logo: 'favicon.png',
+		// 		favicon: 'favicon.png'
+		// 	}
+		// };
 
 		const token = await env.GH_TOKEN;
 

@@ -3,66 +3,47 @@
     import MainMenu from './MainMenu.svelte';
 	import StepNav from './StepNav.svelte';
     import Assets from './Assets.svelte';
-    import { collections, changes } from './stores/collections.js';
+    import { collections, config, fetchData } from './stores/collections.js';
+    import { changes } from './stores/changes.js';
     import RecordList from './RecordList.svelte';
     import Record from './Record.svelte';
     import { location, collectionId, recordId } from './stores/location.js';
-    import { generateId } from './utils.js';
-
-	// TODO: fetch from API
-	import configFile from './content/config.json';
-	import globalsFile from './content/globals.json';
-	import todosFile from './content/todos.json';
-    let content = { };
+	import Header from './Header.svelte';
     
-    $: collections.set(content);
-    $: config = $collections.config;
+    onMount(async () => {
+        let data = await fetchData();
+        config.set(data.config);
+        collections.set(data.collections);
+    });
 
-	onMount(async () => {
-        // Fetch content
-        try {
-            setTimeout(() => {
-                content = { config: configFile, globals: globalsFile, todos: todosFile}
-            }, 1000);
-            await fetch('/hg-admin/collections')
-                .then(response => response.json())
-                .then(json => content = json);
-        } catch (error) {
-            console.error('Failed to fetch:', error);
-        }
-
-		// Content changes store
-		changes.subscribe((/** @type {{ [s: string]: any; }} */ changes) => {
-            if (Object.keys(changes).length > 0) {
-                localStorage.setItem('changes', JSON.stringify(changes));
-                collections.update(
-                    (/** @type {{ [x: string]: any; }} */ collections) => {
-                        for (const [id, collection] of Object.entries(changes)) {
-                            collections[id] = {...collections[id], ...collection};
-                        }
-                        return collections;
-                    }
-                );
+    changes.subscribe((changes) => {
+        collections.update(
+            (collections) => {
+                for (const [id, collection] of Object.entries(changes)) {
+                    collections[id] = {...collections[id], ...collection};
+                }
+                return collections;
             }
-        });
-	});
-    
-    // $: commitFiles = Object.keys($changes).map((id) => {
-    //     return {[id]: $collections[id]};
-    // });
+        )
+    });
 
-    
+    $: {
+        if (Object.keys($changes).length > 0) {
+            localStorage.setItem('changes', JSON.stringify($changes));
+        }
+    }
+
     /**
      * @param {string} collectionId
      */
-    function createRecord(collectionId){
+    export function createNewRecord(collectionId) {
         let recId = generateId();
-        const collectionConfig = config[collectionId];
+        const collectionConfig = $config[collectionId];
         let record = {};
         for (const [name, field] of Object.entries(collectionConfig.fields)) {
             record[name] = field.default !== undefined ? field.default : '';
         }
-        changes.update(changes => {
+        changes.update((changes) => {
             /** @type {any}*/
             changes[collectionId] ??= {};
             changes[collectionId][recId] ??= {};
@@ -72,157 +53,211 @@
         });
         window.location.href = `#/content/${collectionId}/${recId}`;
     }
+    /**
+     * Generates a unique ID
+     * @returns {string} - A unique ID
+     */
+    export function generateId() {
+        return Math.random().toString(36).substring(2, 12);
+    }
 </script>
 
-<!-- <svelte:options customElement="hintergrund-admin" /> -->
-
-<div class="container">
-    <MainMenu />
-    <main>
-        <StepNav />
-		<!-- /* Router -->
-		{#if $location === 'content' && $collectionId && config}
-            {#if config[$collectionId].hasOwnProperty('isCollection') && config[$collectionId].isCollection}
-                {#if $recordId}
-                    <Record record={$collections[$collectionId][$recordId]} config={config[$collectionId]}/>
+<div>
+    <Header />
+    <div class="container">
+        <MainMenu />
+        <main>
+            <StepNav />
+            <!-- /* Router -->
+            {#if $location === 'content' && $config && $collectionId }
+                {#if $config[$collectionId] && $config[$collectionId].hasOwnProperty('isCollection') && $config[$collectionId].isCollection}
+                    {#if $recordId}
+                        <Record record={$collections[$collectionId][$recordId]} config={$config[$collectionId]}/>
+                    {:else}
+                        <RecordList collection={$collections[$collectionId]} config={$config[$collectionId]}/>
+                    {/if}
                 {:else}
-                    <RecordList collection={$collections[$collectionId]} config={config[$collectionId]}/>
+                    <Record record={$collections[$collectionId]} config={$config[$collectionId]}/>
                 {/if}
-            {:else}
-                <Record record={$collections[$collectionId]} config={config[$collectionId]}/>
-            {/if}
-        {:else if $location === 'assets'}
-            <Assets />
-        {:else if $location === 'settings'}
-            settings
-        {:else if ($location === '' || $location === 'content') && config}
-            <h2>Content</h2>
-            <div class="cards content">
-                {#each Object.entries(config) as [id, content]}
-                    <a class="card" href="#/content/{id}">
-                        <h4>
-                            {content.title}
-                        </h4>
-                        {#if content.isCollection}
-                        <a href="#/content/{id}/new" on:click|preventDefault={() => createRecord(id)}>
-                            <svg class="add-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <circle cx="12" cy="12" r="9"></circle>
-                                <line x1="9" y1="12" x2="15" y2="12"></line>
-                                <line x1="12" y1="9" x2="12" y2="15"></line>
-                            </svg>
+            {:else if $location === 'assets'}
+                <Assets />
+            {:else if ($location === '' || $location === 'content') && $config}
+                <h2>Content</h2>
+                <div class="cards content">
+                    {#each Object.entries($config) as [id, content]}
+                        <a class="card" href="#/content/{id}">
+                            <h4>
+                                {content.title}
+                            </h4>
+                            {#if content.description}
+                                <p>{content.description}</p>
+                            {/if}
+                            {#if content.isCollection}
+                            <a href="#/content/{id}/new" on:click|preventDefault={() => createNewRecord(id)}>
+                                <svg class="add-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1" stroke="#656d76" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <circle cx="12" cy="12" r="9"></circle>
+                                    <line x1="9" y1="12" x2="15" y2="12"></line>
+                                    <line x1="12" y1="9" x2="12" y2="15"></line>
+                                </svg>
+                            </a>
+                            {/if}
                         </a>
-                        {/if}
+                    {/each}
+                </div>
+    
+                <h2>Assets</h2>
+                <div class="cards">
+                    <a class="card" href="#/assets">
+                        <h4>Assets</h4>
+                        <p>Images, PDF's and other files</p>
                     </a>
-                {/each}
-            </div>
-
-            <h2>Assets</h2>
-            <div class="cards">
-                <a class="card" href="#/assets">
-                    <h4>Assets</h4>
-                </a>
-            </div>
-            {:else}
-            loading...
-            {/if}
-            <!-- Router */-->
-        </main>
+                </div>
+                {:else}
+                loading...
+                {/if}
+                <!-- Router */-->
+            </main>
+    </div>
 </div>
 
 <style>
+:global(
+    *,
+    *::before,
+    *::after
+) {
+    box-sizing: border-box;
+}
+:global(:root) {
+    font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    color: rgb(36, 41, 47);
+}
 .container {
     display: flex;
-    min-height: 100vh;
-    font-family: sans-serif;
+    flex-direction: row;
+    min-height: calc(100vh - 3.5rem);
     background-color: #fff;
-    color: #333;
 }
 main {
-    padding: 8rem 2rem 2rem;
+    padding: 4rem 2rem 2rem;
+    min-width: 0px;
     width: 100%;
     overflow-x: hidden;
 }
 h2 {
-    margin-top: 2rem;
+    margin: 1.5rem 0 1rem;
+    scroll-margin-top: 4rem;
+    line-height: 1.25;
+    padding-bottom: 0.5rem;
+    font-size: 1.5rem;
+    border-bottom: 1px solid rgb(208, 215, 222);
+    font-weight: 500;
 }
 .cards {
     display: grid;
     gap: 2rem;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
 }
-@media screen and (max-width: 1200px) {
-    .cards {
-        grid-template-columns: 1fr 1fr 1fr;
-    }
-}
-@media screen and (max-width: 900px) {
-    .cards {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 768px) {
     .cards {
         grid-template-columns: 1fr;
     }
 }
 .card {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;
     width: 100%;
-    height: 8rem;
-    background-color: #f0f0f0;
+    border-color: rgb(208, 215, 222);
+    border-radius: 0.375rem;
+    border-style: solid;
+    border-width: max(1px, 0.0625rem);
     position: relative;
+    padding: 1rem;
 }
 .card:hover {
-    background-color: #ddd;
+    background-color: rgb(246, 248, 250);
 }
 .card h4 {
-    position: absolute;
-    top: 0;
-    left: 0;
-    padding: 1rem;
+    margin: 0;
     white-space: nowrap;
+    font-weight: 600;
+}
+.card p {
+    color: #656d76;
 }
 .add-icon {
     width: 2rem;
     height: 2rem;
-    display: block;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
     margin: 0 auto;
 }
 .add-icon:hover {
-    fill: #000;
-    stroke: #ddd;
+    fill: rgb(36, 41, 47);
+    stroke: rgb(246, 248, 250);
 }
 
 /* global styles (main.css)*/
 :global(a),
 :global(a:visited) {
-	color: var(--txtPrimaryColor);
+	color: rgb(36, 41, 47);
 	text-decoration: none;
 }
-
-:global(.btn) {
-	color: inherit;
-	background-color: var(--fg);
-	color: var(--bg);
-	padding: 0.5rem 1rem;
-	border-radius: 5px;
-	display: flex;
-	align-items: center;
+:global(.btn){
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    appearance: none;
+    user-select: none;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 2rem;
+    min-width: max-content;
+    color: rgb(36, 41, 47);
+    background-color: rgb(246, 248, 250);
+    box-shadow: rgba(31, 35, 40, 0.04) 0px 1px 0px, rgba(255, 255, 255, 0.25) 0px 1px 0px inset;
+    border-radius: 0.375rem;
+    border-width: 1px;
+    border-style: solid;
+    border-image: initial;
+    border-color: rgba(31,35,40,0.15);
+    text-decoration: none;
+    padding: 0 0.75rem;
+    gap: 0.5rem;
+    transition: 80ms cubic-bezier(0.65,0,0.35,1);
+    transition-property: color,fill,background-color,border-color;
+}
+:global(.btn:hover){
+    background-color: rgb(243, 244, 246);
+    border-color: rgba(31,35,40,0.15);
 }
 
-:global(h1) {
-	font-size: min(10vw, 4rem);
-	font-weight: 600;
-	margin: 0;
-	text-align: center;
-	top: 10vh;
-	left: 0;
-	width: 100%;
-	padding: 0 2.5rem;
-	box-sizing: border-box;
-	line-height: 1;
+:global(.btn.danger){
+    color: #cf222e;
+    fill: #cf222e;
+    background-color: #f6f8fa;
+    border-color: rgba(31,35,40,0.15);
+    box-shadow: 0 1px 0 rgba(31,35,40,0.04),inset 0 1px 0 rgba(255,255,255,0.25);
+}
+:global(.btn.danger:hover){
+    color: #ffffff;
+    fill: #ffffff;
+    background-color: #a40e26;
+    border-color: rgba(31,35,40,0.15);
+    box-shadow: 0 1px 0 rgba(31,35,40,0.04);
+}
+:global(.btn.primary){
+    color: #ffffff;
+    background-color: #1f883d;
+    border-color: rgba(31,35,40,0.15);
+    box-shadow: 0 1px 0 rgba(31,35,40,0.1),inset 0 1px 0 rgba(255,255,255,0.03);
+}
+:global(.btn.primary:hover){
+    background-color: #1a7f37;
+    border-color: rgba(31,35,40,0.15);
 }
 </style>

@@ -1,30 +1,44 @@
 import { writable } from 'svelte/store';
+import { changes } from './changes';
 
-/** @typedef {{[id: string]: any | 'delete'}} Changes */
-/** @typedef {{}} */
-
-function initChanges() {
-	const local = typeof window !== 'undefined' ? localStorage.getItem('changes') : '{}';
-
+function initCollections() {
 	/**  @type {import('svelte/store').Writable<Changes>} */
-	const { subscribe, set, update } = writable(local ? JSON.parse(local) : {});
+	const { subscribe, set, update } = writable({});
 
 	return {
 		subscribe,
 		update,
-		delete: (/** @type {string} */ key) => {
-			update((changes) => {
-				changes[key] = 'delete';
-				return changes;
+		set: (collections) => {
+			const unsubscribe = changes.subscribe((changes) => {
+				if (changes) {
+					for (const [id, collection] of Object.entries(changes)) {
+						collections[id] = { ...collections[id], ...collection };
+					}
+				}
 			});
-		},
-		set: (/** @type {Changes} */ newChanges) => {
-			set(newChanges || {});
+			set(collections);
+			unsubscribe();
 		}
 	};
 }
 
-export const changes = initChanges();
-
 /** @type {import('svelte/store').Writable<any>} */
-export const collections = writable();
+const collections = initCollections();
+
+const config = writable({});
+
+async function fetchData() {
+	let data = {};
+	try {
+		await fetch('/hg-admin/collections')
+			.then((response) => response.json())
+			.then((json) => {
+				data = json;
+			});
+	} catch (error) {
+		console.error('Failed to fetch:', error);
+	}
+	return data;
+}
+
+export { collections, config, fetchData };

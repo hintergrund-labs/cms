@@ -6,37 +6,59 @@
     /** @type {any} */
     export let collection;
 
+    let selected = [];
 </script>
 
 <h2>{config.title}</h2>
-<!-- <div class="search">
-    <input type="text" placeholder="Search" />
-    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-        <circle cx="10" cy="10" r="7"></circle>
-        <line x1="21" y1="21" x2="15" y2="15"></line>
-     </svg>
-</div> -->
+
+{#if selected.length > 0}
+<div class="btn-list">
+    <button class="btn" on:click={() => {
+    }}>Duplicate</button>
+    <button class="btn danger" on:click={() => {
+    }}>Delete</button>
+</div>
+{/if}
+
 <div class="table-container">
     <table cellspacing="0" cellpadding="0">
         <thead>
             <tr>
+                <th class="checkbox">
+                    <input type="checkbox" checked={selected.length === Object.keys(collection).length} on:click={() => {
+                        if (selected.length === Object.keys(collection).length) {
+                            selected = [];
+                        } else {
+                            selected = Object.keys(collection);
+                        }
+                    }}/>
+                </th>
                 {#if config.listFields}
                     {#each Object.entries(config.fields) as [name, field]}
                         {#if config.listFields.includes(name)}
-                            <td class="list-heading-item">{field.label}</td>
+                            <th class="list-heading-item">{field.label}</th>
                         {/if}
                     {/each}
                 {:else}
                     {#each Object.values(config.fields) as field}
-                        <td class="list-heading-item">{field.label}</td>
+                        <th class="list-heading-item">{field.label}</th>
                     {/each}
                 {/if}
             </tr>
         </thead>
         <tbody>
             {#each Object.entries(collection) as [id, entry] }
-                <tr>
+                <tr class:selected={selected.includes(id)}>
+                    <td class="list-item-item checkbox" on:click={() => {
+                            let index = selected.indexOf(id);
+                            if (index > -1) {
+                                selected = selected.filter((_, i) => i !== index);
+                            } else {
+                                selected = [...selected, id];
+                            }
+                        }}>
+                        <input type="checkbox" checked={selected.includes(id)} />
+                    </td>
                     {#if config.listFields}
                         {#each Object.keys(config.fields) as name}
                             {#if config.listFields.includes(name)}
@@ -63,63 +85,64 @@
 </div>
 
 <style>
-:global(:root) {
-    --tableRowColor: #fff;
-	--tableRowHoverColor: #ddd;
-	--tableRowOddColor: #f7f7f7;
+h2 {
+    margin: 1.5rem 0 1rem;
+    scroll-margin-top: 4rem;
+    line-height: 1.25;
+    padding-bottom: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 500;
 }
 .table-container {
     overflow-x: auto;
 }
 table {
     width: 100%;
-    border-collapse: collapse;
+    background-color: rgb(255, 255, 255);
+    border-spacing: 0px;
+    border-collapse: separate;
+    font-size: 0.875rem;
+    table-layout: fixed;
 }
-td {
-    height: 4rem;
+tr.selected {
+    background-color: rgb(246, 248, 250);
 }
-thead td {
-    padding: 0 1rem;
+th {
+    color: rgb(101, 109, 118);
+    font-weight: 600;
+    padding: 1rem 1.5rem;
+    text-align: start;
+    white-space: nowrap;
 }
+.checkbox {
+    width: 2rem;
+}
+td.checkbox {
+    padding: 1rem 1.5rem;
+}
+th, td {
+    border-bottom: 1px solid rgb(208, 215, 222);
+    overflow: hidden;
+}
+
 tbody a {
     display: flex;
     width: 100%;
     height: 100%;
     align-items: center;
-    padding: 0 1rem;
+    padding: 1rem 1.5rem;
     white-space: nowrap;
 }
 tbody tr {
     transition: all 0.3s ease;
 }
-tbody tr:nth-child(odd){
-    background-color: var(--tableRowOddColor);
-}
 tbody tr:hover {
-    background-color: var(--tableRowHoverColor);
+    background-color: rgb(246, 248, 250);
 }
-.search {
-    position: relative;
+.btn-list {
+    display: flex;
+    justify-content: start;
     margin-bottom: 1rem;
-}
-.search input {
-    width: 100%;
-    height: 3rem;
-    padding: 0 2rem;
-    border: 1px solid #f0f0f0;
-    border-radius: 0;
-    box-shadow: 0 2px 3px 0 rgb(0 2 4 / 5%), 0 10px 4px -8px rgb(0 2 4 / 2%);
-}
-.search input:not(:disabled):active, .search input:not(:disabled):focus {
-    border-color: #ccc;
-    outline: none;
-    box-shadow: 0 2px 3px 0 rgb(0 2 4 / 10%), 0 10px 4px -4px rgb(0 2 4 / 5%);
-}
-.search svg {
-    position: absolute;
-    right: 1em;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 1rem;
+    gap: 1rem;
 }
 </style>

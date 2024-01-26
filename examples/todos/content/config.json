@@ -1,0 +1,146 @@
+{
+	"globals": {
+		"title": "Global Data",
+		"slug": "globals",
+		"description": "Global site data for the Website",
+		"file": "globals.json",
+		"fields": {
+			"title": {
+				"label": "Title",
+				"widget": "string"
+			},
+			"description": {
+				"label": "Description",
+				"widget": "text"
+			},
+			"keywords": {
+				"label": "Keywords",
+				"widget": "list"
+			},
+			"logo": {
+				"label": "Logo",
+				"widget": "image"
+			},
+			"favicon": {
+				"label": "Favicon",
+				"widget": "image"
+			}
+		}
+	},
+	"todos": {
+		"title": "To Do's",
+		"description": "A list of to do's",
+		"file": "todos.json",
+		"isCollection": true,
+		"fields": {
+			"title": {
+				"label": "Title",
+				"widget": "string",
+				"description": "The title of the to do",
+				"required": true,
+				"unique": true,
+				"default": "New To Do"
+			},
+			"slug": {
+				"label": "URL",
+				"id": true,
+				"hidden": true,
+				"widget": "derived",
+				"mode": "slug",
+				"source": "title"
+			},
+			"description": {
+				"label": "Description",
+				"widget": "text",
+				"description": "The description of the to do",
+				"required": false,
+				"default": "New To Do",
+				"list": false
+			},
+			"done": {
+				"label": "Done",
+				"widget": "checkbox",
+				"description": "Whether the to do is done",
+				"required": true,
+				"default": false,
+				"list": false
+			},
+			"date": {
+				"label": "Date",
+				"widget": "date",
+				"description": "The date of the to do",
+				"required": false,
+				"default": "today",
+				"list": false
+			},
+			"datetime": {
+				"label": "Date Time",
+				"widget": "datetime",
+				"description": "The date and time of the to do",
+				"required": false,
+				"default": "now",
+				"list": false
+			},
+			"priority": {
+				"label": "Priority",
+				"widget": "select-single",
+				"description": "The priority of the to do",
+				"required": false,
+				"default": "low",
+				"list": false,
+				"options": [
+					{
+						"label": "Low",
+						"value": "low"
+					},
+					{
+						"label": "Medium",
+						"value": "medium"
+					},
+					{
+						"label": "High",
+						"value": "high"
+					}
+				]
+			},
+			"category": {
+				"label": "Category",
+				"widget": "select-multiple",
+				"description": "The category of the to do",
+				"required": false,
+				"default": "none",
+				"list": false,
+				"options": [
+					{
+						"label": "None",
+						"value": "none"
+					},
+					{
+						"label": "Home",
+						"value": "home"
+					},
+					{
+						"label": "Work",
+						"value": "work"
+					},
+					{
+						"label": "Personal",
+						"value": "personal"
+					}
+				]
+			},
+			"progress": {
+				"label": "Progress",
+				"widget": "number",
+				"description": "The progress of the to do",
+				"required": false,
+				"default": 0,
+				"list": false,
+				"min": 0,
+				"max": 100,
+				"step": 1
+			}
+		},
+		"listFields": ["title", "done", "date", "progress"]
+	}
+}

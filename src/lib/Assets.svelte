@@ -17,7 +17,6 @@
         status: null,
         message: null
     };
-    $: console.log(updating);
 
     onMount(async () => {
         getAssets();
